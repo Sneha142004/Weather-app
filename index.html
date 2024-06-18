@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="box">
+        <div class="search">
+            <input type="text" id="cityInput" placeholder="Enter City Name" spellcheck="false">
+            <button id="searchBtn"><img src="https://cdn-icons-png.flaticon.com/512/3771/3771554.png"></button>
+        </div>
+        <div class="weather">
+            <img src="https://cdn-icons-png.flaticon.com/512/4150/4150897.png" class="weathericon">
+            <h1 class="temp">22°C</h1>
+            <h2 class="city">Loading...</h2>
+            <p class="time">Loading...</p>
+            <div class="details">
+                <div class="col">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4148/4148460.png">
+                    <div>
+                        <p class="humidity">50%</p>
+                        <p>Humidity</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <img src="https://static.thenounproject.com/png/4256820-200.png">
+                    <div>
+                        <p class="wind">16 km/h</p>
+                        <p>Wind Speed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const apikey = "c3eca7124fa14f439df91518241806"; 
+        const apiurl = "https://api.weatherapi.com/v1/current.json?key=";
+
+        const cityInput = document.getElementById("cityInput");
+        const searchBtn = document.getElementById("searchBtn");
+
+        const weatherIcons = {
+            
+            1000: "https://cdn-icons-png.flaticon.com/512/3222/3222691.png", 
+            1003: "https://cdn-icons-png.flaticon.com/512/0/74.png", 
+            1006: "https://cdn-icons-png.flaticon.com/512/7084/7084486.png", 
+            1009: "https://cdn-icons-png.flaticon.com/512/6643/6643186.png", 
+
+           
+            1001: "https://cdn.iconscout.com/icon/free/png-256/free-weather-clear-night-3186139-2681199.png", // Clear night
+            1004: "https://cdn-icons-png.flaticon.com/512/0/74.png", 
+            1007: "https://cdn-icons-png.flaticon.com/512/6805/6805164.png",
+            1010: "https://cdn-icons-png.flaticon.com/512/6805/6805164.png", 
+
+           
+            1030: "https://cdn-icons-png.flaticon.com/256/5421/5421258.png", 
+            1063: "https://cdn-icons-png.flaticon.com/512/4150/4150897.png", 
+            1066: "https://cdn-icons-png.flaticon.com/512/1779/1779932.png", 
+           
+        };
+
+        async function fetchWeather(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch weather data');
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+                alert('Failed to fetch weather data. Please try again later.');
+                return null;
+            }
+        }
+
+        function updateWeather(data) {
+          
+            document.querySelector('.city').textContent = data.location.name;
+
+           
+            document.querySelector('.temp').textContent = `${data.current.temp_c}°C`;
+
+            
+            document.querySelector('.humidity').textContent = `${data.current.humidity}%`;
+
+           
+            document.querySelector('.wind').textContent = `${data.current.wind_kph} km/h`;
+
+           
+            const conditionCode = data.current.condition.code;
+            const isDay = data.current.is_day === 1;
+            const iconUrl = weatherIcons[conditionCode] || 'https://cdn-icons-png.flaticon.com/512/1779/1779940.png'; 
+
+            document.querySelector('.weathericon').src = iconUrl;
+
+           
+            const time = new Date(data.location.localtime);
+            const hours = time.getHours();
+            const minutes = String(time.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedTime = `${hours % 12}:${minutes} ${ampm}`;
+
+            document.querySelector('.time').textContent = formattedTime;
+        }
+
+        async function fetchWeatherByCoords(latitude, longitude) {
+            const url = `${apiurl}${apikey}&q=${latitude},${longitude}`;
+            return fetchWeather(url);
+        }
+
+        async function searchWeather(city) {
+            const url = `${apiurl}${apikey}&q=${city}`;
+            const data = await fetchWeather(url);
+            if (data) {
+                updateWeather(data);
+            }
+        }
+
+        async function handleGeolocationSuccess(position) {
+            const { latitude, longitude } = position.coords;
+            const data = await fetchWeatherByCoords(latitude, longitude);
+            if (data) {
+                updateWeather(data);
+            }
+        }
+
+        function handleGeolocationError(error) {
+            console.error("Geolocation error:", error);
+            alert("Geolocation is not supported by this browser or permission denied.");
+        }
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(handleGeolocationSuccess, handleGeolocationError);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+       
+        getLocation();
+
+       
+        searchBtn.addEventListener('click', () => {
+            const city = cityInput.value.trim();
+            if (city) {
+                searchWeather(city);
+            } else {
+                alert('Please enter a city name');
+            }
+        });
+
+    </script>
+</body>
+</html>
